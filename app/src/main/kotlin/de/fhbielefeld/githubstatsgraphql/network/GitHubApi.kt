@@ -5,8 +5,8 @@ import android.os.Handler
 import android.support.annotation.RawRes
 import com.squareup.moshi.Moshi
 import de.fhbielefeld.githubstatsgraphql.R
-import de.fhbielefeld.githubstatsgraphql.entity.Viewer
-import de.fhbielefeld.githubstatsgraphql.result.UsernameResult
+import de.fhbielefeld.githubstatsgraphql.result.OrganizationStatsResult
+import de.fhbielefeld.githubstatsgraphql.result.OrganizationStatsResult.OrganizationStatsData
 import okhttp3.Call
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -22,14 +22,15 @@ class GitHubApi(private val context: Context) {
     private val gitHubHttpClient = GitHubHttpClient()
     private val parser: Moshi = Moshi.Builder().build()
 
-    fun username(callback: (GitHubResult<Viewer>) -> Unit): Call {
-        return gitHubHttpClient.request(readResource(R.raw.query_username),
+    fun organizationStats(callback: (GitHubResult<OrganizationStatsData>) -> Unit): Call {
+        return gitHubHttpClient.request(readResource(R.raw.query_stats),
                 parseCallback = {
-                    deliverOnMainThread(parser.adapter(UsernameResult::class.java).fromJson(it),
-                            callback)
+                    deliverOnMainThread(parser.adapter(OrganizationStatsResult::class.java)
+                            .fromJson(it), callback)
                 },
                 errorCallback = {
-                    deliverOnMainThread(UsernameResult(null, arrayOf(GitHubError(it))), callback)
+                    deliverOnMainThread(OrganizationStatsResult(null, arrayOf(GitHubError(it))),
+                            callback)
                 })
     }
 
