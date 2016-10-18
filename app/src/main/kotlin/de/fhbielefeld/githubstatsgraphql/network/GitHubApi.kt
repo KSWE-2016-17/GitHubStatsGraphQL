@@ -18,12 +18,16 @@ import java.io.InputStreamReader
  */
 class GitHubApi(private val context: Context) {
 
+    private companion object {
+        private const val BRANCH = "master"
+    }
+
     private val handler = Handler(context.mainLooper)
     private val gitHubHttpClient = GitHubHttpClient()
     private val parser: Moshi = Moshi.Builder().build()
 
-    fun organizationStats(callback: (GitHubResult<OrganizationStatsData>) -> Unit): Call {
-        return gitHubHttpClient.request(readResource(R.raw.query_stats),
+    fun organizationStats(id: String, callback: (GitHubResult<OrganizationStatsData>) -> Unit): Call {
+        return gitHubHttpClient.request(buildQuery(R.raw.query_stats, id, BRANCH),
                 parseCallback = {
                     deliverOnMainThread(parser.adapter(OrganizationStatsResult::class.java)
                             .fromJson(it), callback)
@@ -39,6 +43,13 @@ class GitHubApi(private val context: Context) {
         handler.post {
             callback?.invoke(result)
         }
+    }
+
+    private fun buildQuery(@RawRes queryResource: Int, vararg arguments: Any): String {
+        val queryContainer = readResource(R.raw.query)
+        val query = readResource(queryResource)
+
+        return queryContainer.format(query.format(*arguments))
     }
 
     private fun readResource(@RawRes resource: Int): String {

@@ -1,0 +1,34 @@
+{
+  node(id: \"%s\") {
+    ... on Organization {
+      repositories(first: 30) {
+        edges {
+          node {
+            ... on Repository {
+              id,
+              name,
+              ref(qualifiedName: \"%s\") {
+                target {
+                  ... on Commit {
+                    history(first: 30) {
+                      edges {
+                        node {
+                          author {
+                            user {
+                              login,
+                              id
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

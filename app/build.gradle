@@ -15,7 +15,10 @@ android {
 
     buildTypes {
         applicationVariants.all { variant ->
-            variant.buildConfigField "String", "GITHUB_TOKEN", "\"" + getGitHubToken() + "\""
+            variant.buildConfigField "String", "GITHUB_USERNAME", "\"" +
+                    getFromSecrets('GITHUB_USERNAME') + "\""
+            variant.buildConfigField "String", "GITHUB_PASSWORD", "\"" +
+                    getFromSecrets('GITHUB_PASSWORD') + "\""
         }
 
         release {
@@ -34,6 +37,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     compile "com.android.support:appcompat-v7:$support_version"
+    compile "com.android.support:design:$support_version"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
     compile 'com.jakewharton:kotterknife:0.1.0-SNAPSHOT'
@@ -41,14 +45,18 @@ dependencies {
     compile 'com.squareup.moshi:moshi:1.2.0'
 }
 
-def getGitHubToken() {
+def getFromSecrets(String key) {
     def Properties props = new Properties()
 
     try {
         props.load(new FileInputStream(new File('secrets.properties')))
     } catch (Exception ignored) {
-        throw new GradleException('Please add a secrets.properties file with your token.')
+        throw new GradleException('Please add a secrets.properties file with your data.')
     }
 
-    return props['GITHUB_TOKEN']
+    if (props.containsKey(key)) {
+        return props[key]
+    } else {
+        throw new GradleException('Please add a ' + key + ' value to your secrets.properties file.')
+    }
 }
