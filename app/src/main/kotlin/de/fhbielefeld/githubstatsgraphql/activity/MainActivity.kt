@@ -1,85 +1,142 @@
 package de.fhbielefeld.githubstatsgraphql.activity
 
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.AppCompatActivity
-import android.widget.TextView
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.SearchView
+import android.view.Menu
+import android.view.ViewGroup
 import butterknife.bindView
 import de.fhbielefeld.githubstatsgraphql.R
+import de.fhbielefeld.githubstatsgraphql.adapter.OrganizationAdapter
 import de.fhbielefeld.githubstatsgraphql.application.MainApplication
-import de.fhbielefeld.githubstatsgraphql.entity.api.Commit
-import de.fhbielefeld.githubstatsgraphql.entity.api.User
-import de.fhbielefeld.githubstatsgraphql.result.OrganizationStatsResult.OrganizationStatsData
+import de.fhbielefeld.githubstatsgraphql.entity.api.PageInfo
+import de.fhbielefeld.githubstatsgraphql.util.EndlessRecyclerOnScrollListener
 import okhttp3.Call
-import java.util.*
-import kotlin.comparisons.compareByDescending
-import kotlin.comparisons.thenBy
 
 /**
- * The main Activity. All UI work happens here.
+ * The main Activity in which the organizations are presented. All UI work happens here.
  *
  * @author Ruben Gees
  */
 class MainActivity : AppCompatActivity() {
 
     private companion object {
-        private const val ORGANIZATION_ID = "MDEyOk9yZ2FuaXphdGlvbjIyNjM4NDcw"
-
-        private val COMPARATOR = compareByDescending<Map.Entry<User, MutableList<Commit>>>({
-            it.value.size
-        }).thenBy { it.key.login }
+        private const val QUERY_STATE = "query"
+        private const val PAGE_INFO_STATE = "pageInfo"
     }
 
-    private var call: Call? = null
+    private lateinit var adapter: OrganizationAdapter
 
+    private var query: String = ""
+    private var pageInfo: PageInfo = PageInfo("", true)
+
+    private var task: Call? = null
+
+    private val root: ViewGroup by bindView(R.id.root)
     private val refreshLayout: SwipeRefreshLayout by bindView(R.id.refreshLayout)
-    private val result: TextView by bindView(R.id.result)
+    private val list: RecyclerView by bindView(R.id.list)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        adapter = OrganizationAdapter(savedInstanceState)
+
+        savedInstanceState?.let {
+            query = it.getString(QUERY_STATE)
+            pageInfo = it.getParcelable(PAGE_INFO_STATE)
+        }
+
         refreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorPrimaryDark,
                 R.color.colorPrimaryLight)
-        refreshLayout.setOnRefreshListener {
-            if (call == null) {
-                load()
+
+        list.setHasFixedSize(true)
+        list.layoutManager = LinearLayoutManager(this)
+        list.adapter = adapter
+        list.addOnScrollListener(object : EndlessRecyclerOnScrollListener(list.layoutManager) {
+            override fun onLoadMore() {
+                if (task == null && pageInfo.hasNextPage) {
+                    load()
+                }
             }
-        }
-
-        load()
+        })
     }
 
-    override fun onDestroy() {
-        call?.cancel()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.activity_main, menu)
 
-        super.onDestroy()
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
+
+        searchView.setQuery(query, false)
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(newText: String): Boolean {
+                reset()
+
+                query = newText
+                load()
+
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String): Boolean {
+                return false
+            }
+        })
+
+        return true
     }
 
-    private fun analyze(data: OrganizationStatsData) {
-        val map = LinkedHashMap<User, MutableList<Commit>>()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
 
-        data.organization.repositories.flatMap { it.branch.commits }
-                .filterNot { it.author.user == null }.forEach {
-            map.getOrPut(it.author.user!!, { ArrayList<Commit>() }).add(it)
-        }
-
-        result.text = map.asSequence().sortedWith(COMPARATOR)
-                .joinToString(separator = "\n", transform = { "${it.key.login}: ${it.value.size}" })
+        outState.putString(QUERY_STATE, query)
+        outState.putParcelable(PAGE_INFO_STATE, pageInfo)
+        adapter.saveInstanceState(outState)
     }
 
     private fun load() {
-        refreshLayout.isRefreshing = true
+        showProgress()
 
-        MainApplication.api.organizationStats(ORGANIZATION_ID) {
-            refreshLayout.isRefreshing = false
-            call = null
+        MainApplication.api.organizationSearch(query, pageInfo.endCursor, {
+            cancel()
 
-            if (it.errors != null) {
-                result.text = it.errors.joinToString { it.message }
-            } else if (it.data != null) {
-                analyze(it.data!!)
+            if (it.data != null) {
+                pageInfo = it.data!!.pageInfo
+                adapter.add(it.data!!.organizations)
+            } else if (it.errors != null) {
+                Snackbar.make(root, it.errors.joinToString { it.message }, Snackbar.LENGTH_LONG)
+                        .show()
             }
-        }
+
+            hideProgress()
+        })
+    }
+
+    private fun cancel() {
+        task?.cancel()
+        task = null
+    }
+
+    private fun reset() {
+        adapter.clear()
+        cancel()
+
+        query = ""
+        pageInfo = PageInfo("", true)
+    }
+
+    fun showProgress() {
+        refreshLayout.isEnabled = true
+        refreshLayout.isRefreshing = true
+    }
+
+    fun hideProgress() {
+        refreshLayout.isRefreshing = false
+        refreshLayout.isEnabled = false
     }
 }

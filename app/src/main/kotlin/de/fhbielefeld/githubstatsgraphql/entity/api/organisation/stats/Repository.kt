@@ -1,4 +1,4 @@
-package de.fhbielefeld.githubstatsgraphql.entity.api
+package de.fhbielefeld.githubstatsgraphql.entity.api.organisation.stats
 
 /**
  * Representation of a repository.

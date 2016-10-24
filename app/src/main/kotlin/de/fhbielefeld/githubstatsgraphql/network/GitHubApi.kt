@@ -5,8 +5,10 @@ import android.os.Handler
 import android.support.annotation.RawRes
 import com.squareup.moshi.Moshi
 import de.fhbielefeld.githubstatsgraphql.R
-import de.fhbielefeld.githubstatsgraphql.result.OrganizationStatsResult
-import de.fhbielefeld.githubstatsgraphql.result.OrganizationStatsResult.OrganizationStatsData
+import de.fhbielefeld.githubstatsgraphql.result.organization.search.OrganizationSearchResult
+import de.fhbielefeld.githubstatsgraphql.result.organization.search.OrganizationSearchResult.OrganizationSearchData
+import de.fhbielefeld.githubstatsgraphql.result.organization.stats.OrganizationStatsResult
+import de.fhbielefeld.githubstatsgraphql.result.organization.stats.OrganizationStatsResult.OrganizationStatsData
 import okhttp3.Call
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -38,6 +40,19 @@ class GitHubApi(private val context: Context) {
                 })
     }
 
+    fun organizationSearch(query: String, cursor: String?,
+                           callback: (GitHubResult<OrganizationSearchData>) -> Unit): Call {
+        return gitHubHttpClient.request(buildQuery(R.raw.query_search_organization, query, cursor),
+                parseCallback = {
+                    deliverOnMainThread(parser.adapter(OrganizationSearchResult::class.java)
+                            .fromJson(it).init(), callback)
+                },
+                errorCallback = {
+                    deliverOnMainThread(OrganizationSearchResult(null, arrayOf(GitHubError(it))),
+                            callback)
+                })
+    }
+
     private fun <T> deliverOnMainThread(result: GitHubResult<T>,
                                         callback: ((GitHubResult<T>) -> Unit)? = null) {
         handler.post {
@@ -45,7 +60,7 @@ class GitHubApi(private val context: Context) {
         }
     }
 
-    private fun buildQuery(@RawRes queryResource: Int, vararg arguments: Any): String {
+    private fun buildQuery(@RawRes queryResource: Int, vararg arguments: Any?): String {
         val queryContainer = readResource(R.raw.query)
         val query = readResource(queryResource)
 

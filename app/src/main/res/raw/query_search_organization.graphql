@@ -1,0 +1,18 @@
+{
+  search(first: 30, query: \"%s\", after: \"%s\", type: USER) {
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    edges {
+      node {
+        ... on Organization {
+          id
+          login
+          name
+          avatarURL
+        }
+      }
+    }
+  }
+}
