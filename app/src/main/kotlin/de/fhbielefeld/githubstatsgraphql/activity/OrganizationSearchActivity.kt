@@ -80,7 +80,6 @@ class OrganizationSearchActivity : AppCompatActivity() {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(newText: String): Boolean {
                 reset()
-                searchView.setQuery(null, false)
 
                 query = newText
                 load()
