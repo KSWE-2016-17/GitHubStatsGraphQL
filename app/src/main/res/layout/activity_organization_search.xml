@@ -4,7 +4,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="de.fhbielefeld.githubstatsgraphql.activity.MainActivity">
+    tools:context="de.fhbielefeld.githubstatsgraphql.activity.OrganizationSearchActivity">
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/refreshLayout"

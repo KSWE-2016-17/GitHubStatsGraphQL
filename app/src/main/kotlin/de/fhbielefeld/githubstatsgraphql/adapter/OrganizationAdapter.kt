@@ -27,6 +27,7 @@ class OrganizationAdapter(savedInstanceState: Bundle?) : RecyclerView.Adapter<Or
     }
 
     val list: ArrayList<OrganizationContainer>
+    var onOrganizationClickListener: ((Organization) -> Unit)? = null
 
     init {
         if (savedInstanceState == null) {
@@ -67,10 +68,18 @@ class OrganizationAdapter(savedInstanceState: Bundle?) : RecyclerView.Adapter<Or
         outState.putParcelableArrayList(LIST_STATE, list)
     }
 
-    inner class ViewHolder(itemView: View?) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val name: TextView by bindView(R.id.name)
         private val image: ImageView by bindView(R.id.image)
+
+        init {
+            itemView.setOnClickListener {
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    onOrganizationClickListener?.invoke(list[adapterPosition].node)
+                }
+            }
+        }
 
         fun bind(item: Organization) {
             name.text = if (item.name?.isBlank() ?: true) item.login else item.name

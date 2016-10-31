@@ -22,7 +22,7 @@ import okhttp3.Call
  *
  * @author Ruben Gees
  */
-class MainActivity : AppCompatActivity() {
+class OrganizationSearchActivity : AppCompatActivity() {
 
     private companion object {
         private const val QUERY_STATE = "query"
@@ -42,9 +42,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_organization_search)
 
         adapter = OrganizationAdapter(savedInstanceState)
+        adapter.onOrganizationClickListener = {
+            OrganizationStatsActivity.navigateTo(this, it)
+        }
 
         savedInstanceState?.let {
             query = it.getString(QUERY_STATE)
@@ -53,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         refreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorPrimaryDark,
                 R.color.colorPrimaryLight)
+        hideProgress()
 
         list.setHasFixedSize(true)
         list.layoutManager = LinearLayoutManager(this)
@@ -76,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(newText: String): Boolean {
                 reset()
+                searchView.setQuery(null, false)
 
                 query = newText
                 load()
