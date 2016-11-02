@@ -47,6 +47,8 @@ class GitHubHttpClient {
                 } else {
                     errorCallback?.invoke(response.message())
                 }
+
+                response.close()
             }
         })
 

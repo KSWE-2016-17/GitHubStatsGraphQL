@@ -5,10 +5,10 @@ package de.fhbielefeld.githubstatsgraphql.entity.api.organisation.stats
  *
  * @author Ruben Gees
  */
-class Repository(val id: String, val name: String, private val ref: BranchReference) {
+class Repository(val id: String, val name: String, private val ref: BranchReference?) {
 
-    val branch: Branch
-        get() = ref.target
+    val branch: Branch?
+        get() = ref?.target
 
     class BranchReference(val target: Branch)
 }

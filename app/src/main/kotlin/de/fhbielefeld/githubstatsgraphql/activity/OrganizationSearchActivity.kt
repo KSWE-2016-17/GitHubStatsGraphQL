@@ -54,8 +54,7 @@ class OrganizationSearchActivity : AppCompatActivity() {
             pageInfo = it.getParcelable(PAGE_INFO_STATE)
         }
 
-        refreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorPrimaryDark,
-                R.color.colorPrimaryLight)
+        refreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorPrimaryDark)
         hideProgress()
 
         list.setHasFixedSize(true)
@@ -70,13 +69,19 @@ class OrganizationSearchActivity : AppCompatActivity() {
         })
     }
 
+    override fun onDestroy() {
+        cancel()
+
+        super.onDestroy()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.activity_main, menu)
 
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as SearchView
 
-        searchView.setQuery(query, false)
+        searchView.post { searchView.setQuery(query, false) }
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(newText: String): Boolean {
                 reset()
@@ -106,7 +111,7 @@ class OrganizationSearchActivity : AppCompatActivity() {
     private fun load() {
         showProgress()
 
-        MainApplication.api.organizationSearch(query, pageInfo.endCursor, {
+        task = MainApplication.api.organizationSearch(query, pageInfo.endCursor, {
             cancel()
 
             if (it.data != null) {
@@ -134,12 +139,12 @@ class OrganizationSearchActivity : AppCompatActivity() {
         pageInfo = PageInfo("", true)
     }
 
-    fun showProgress() {
+    private fun showProgress() {
         refreshLayout.isEnabled = true
         refreshLayout.isRefreshing = true
     }
 
-    fun hideProgress() {
+    private fun hideProgress() {
         refreshLayout.isRefreshing = false
         refreshLayout.isEnabled = false
     }
