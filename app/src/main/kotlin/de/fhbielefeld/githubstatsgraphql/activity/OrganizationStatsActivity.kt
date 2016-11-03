@@ -6,19 +6,21 @@ import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.view.MenuItem
+import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import butterknife.bindView
 import com.github.mikephil.charting.charts.BarChart
-import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.utils.ColorTemplate
 import de.fhbielefeld.githubstatsgraphql.R
+import de.fhbielefeld.githubstatsgraphql.adapter.RepositoryAdapter
 import de.fhbielefeld.githubstatsgraphql.application.MainApplication
 import de.fhbielefeld.githubstatsgraphql.entity.api.organisation.search.Organization
+import de.fhbielefeld.githubstatsgraphql.logic.Analyzer
+import de.fhbielefeld.githubstatsgraphql.util.ChartUtils
 import okhttp3.Call
-import java.util.*
 
 class OrganizationStatsActivity : AppCompatActivity() {
 
@@ -38,24 +40,48 @@ class OrganizationStatsActivity : AppCompatActivity() {
 
     private var task: Call? = null
     private var data: de.fhbielefeld.githubstatsgraphql.entity.api.organisation.stats.Organization? = null
+    private lateinit var adapter: RepositoryAdapter
 
     private val root: ViewGroup by bindView(R.id.root)
+    private val empty: TextView by bindView(R.id.empty)
     private val refreshLayout: SwipeRefreshLayout by bindView(R.id.refreshLayout)
+    private val commitContainer: ViewGroup by bindView(R.id.commitContainer)
     private val commits: BarChart by bindView(R.id.commits)
-    private val userList: RecyclerView by bindView(R.id.list)
+    private val repositoryStatsList: RecyclerView by bindView(R.id.repositoryStatsList)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_organization_stats)
 
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         refreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorPrimaryDark)
+        ChartUtils.styleBarChart(commits)
+
         hideProgress()
+
+        adapter = RepositoryAdapter()
+
+        repositoryStatsList.isNestedScrollingEnabled = false
+        repositoryStatsList.layoutManager = LinearLayoutManager(this)
+        repositoryStatsList.adapter = adapter
 
         if (data == null) {
             load()
         } else {
             show()
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+
+                return true
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
@@ -84,29 +110,18 @@ class OrganizationStatsActivity : AppCompatActivity() {
     }
 
     private fun show() {
-        commits.description = null
-        commits.legend.isEnabled = false
-        commits.xAxis.isEnabled = false
-        commits.axisRight.isEnabled = false
-        commits.data = commitsPerUser().toBarData()
-        commits.setVisibleXRangeMaximum(5.toFloat())
-        commits.animateY(800)
-    }
+        data?.let {
+            if (it.repositories.isEmpty()) {
+                empty.visibility = View.VISIBLE
+                commitContainer.visibility = View.GONE
+            } else {
+                ChartUtils.populateCommitChart(commits, Analyzer.commitsPerUser(it))
+                adapter.replace(it.repositories)
 
-    private fun commitsPerUser(): HashMap<String, Int> {
-        val result = HashMap<String, Int>()
-
-        data!!.repositories.forEach {
-            it.branch?.commits?.forEach {
-                val user = it.author.user
-
-                if (user != null) {
-                    result.put(user.login, result.getOrElse(user.login, { 0 }) + 1)
-                }
+                empty.visibility = View.GONE
+                commitContainer.visibility = View.VISIBLE
             }
         }
-
-        return result
     }
 
     private fun cancel() {
@@ -122,28 +137,5 @@ class OrganizationStatsActivity : AppCompatActivity() {
     private fun hideProgress() {
         refreshLayout.isRefreshing = false
         refreshLayout.isEnabled = false
-    }
-
-    private fun HashMap<String, Int>.toBarData(): BarData {
-        val list = flatMap { listOf(it).asIterable() }.sortedByDescending { it.value }
-        var index = 0
-
-        return BarData(BarDataSet(list.map {
-            val result = it.toBarEntry(index)
-
-            index++
-            result
-        }, null).apply {
-            valueTextSize = 10f
-
-            setColors(*ColorTemplate.MATERIAL_COLORS)
-            setValueFormatter { value, entry, i, viewPortHandler ->
-                list[entry.x.toInt()].key
-            }
-        })
-    }
-
-    private fun Map.Entry<String, Int>.toBarEntry(position: Int): BarEntry {
-        return BarEntry(position.toFloat(), value.toFloat())
     }
 }

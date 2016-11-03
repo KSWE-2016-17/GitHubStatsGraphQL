@@ -23,9 +23,11 @@
                 android:orientation="vertical">
 
                 <android.support.v7.widget.CardView
+                    android:id="@+id/commitContainer"
                     android:layout_width="match_parent"
                     android:layout_height="250dp"
                     android:layout_margin="8dp"
+                    android:visibility="gone"
                     app:cardCornerRadius="1dp"
                     app:cardElevation="2dp"
                     app:cardUseCompatPadding="true">
@@ -34,11 +36,10 @@
                         android:id="@+id/commits"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
-
                 </android.support.v7.widget.CardView>
 
                 <android.support.v7.widget.RecyclerView
-                    android:id="@+id/userStatsList"
+                    android:id="@+id/repositoryStatsList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
@@ -49,5 +50,13 @@
         </android.support.v4.widget.NestedScrollView>
 
     </android.support.v4.widget.SwipeRefreshLayout>
+
+    <TextView
+        android:id="@+id/empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="No data"
+        android:visibility="gone" />
 
 </android.support.design.widget.CoordinatorLayout>
