@@ -27,11 +27,11 @@ You can now import the project into `Android Studio` or build the project on the
 To build:
 
 ```shell
-./gradlew assembleDebug
+./gradlew assembleRelease
 ```
 
 To run:
 
 ```shell
-./gradlew installDebug
+./gradlew installRelease
 ```
