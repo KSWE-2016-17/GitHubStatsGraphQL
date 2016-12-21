@@ -1,48 +1,33 @@
 package de.fhbielefeld.githubstatsgraphql.adapter
 
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import butterknife.bindView
 import com.github.mikephil.charting.charts.BarChart
 import de.fhbielefeld.githubstatsgraphql.R
 import de.fhbielefeld.githubstatsgraphql.entity.api.organisation.stats.Repository
 import de.fhbielefeld.githubstatsgraphql.logic.Analyzer
 import de.fhbielefeld.githubstatsgraphql.util.ChartUtils
-import java.util.*
+import de.fhbielefeld.githubstatsgraphql.util.bindView
 
 /**
  * TODO: Describe class
  *
  * @author Ruben Gees
  */
-class RepositoryAdapter : RecyclerView.Adapter<RepositoryAdapter.ViewHolder>() {
+class RepositoryAdapter : GitHubAdapter<Repository>() {
 
-    private val list = ArrayList<Repository>()
-
-    override fun getItemCount(): Int {
-        return list.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepositoryViewHolder {
+        return RepositoryViewHolder(LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_repository, parent, false))
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(list[position])
+    override fun areItemsTheSame(oldItem: Repository, newItem: Repository): Boolean {
+        return oldItem.id == newItem.id
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_repository,
-                parent, false))
-    }
-
-    fun replace(items: Collection<Repository>) {
-        list.clear()
-        list.addAll(items)
-
-        notifyDataSetChanged()
-    }
-
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class RepositoryViewHolder(itemView: View) : GitHubViewHolder<Repository>(itemView) {
 
         private val name: TextView by bindView(R.id.name)
         private val commits: BarChart by bindView(R.id.commits)
@@ -51,7 +36,7 @@ class RepositoryAdapter : RecyclerView.Adapter<RepositoryAdapter.ViewHolder>() {
             ChartUtils.styleBarChart(commits)
         }
 
-        fun bind(item: Repository) {
+        override fun bind(item: Repository) {
             name.text = item.name
 
             ChartUtils.populateCommitChart(commits, Analyzer.commitsPerUser(item))

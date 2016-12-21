@@ -4,10 +4,10 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="de.fhbielefeld.githubstatsgraphql.activity.OrganizationSearchActivity">
+    tools:context="de.fhbielefeld.githubstatsgraphql.fragment.OrganizationSearchFragment">
 
     <android.support.v4.widget.SwipeRefreshLayout
-        android:id="@+id/refreshLayout"
+        android:id="@+id/progress"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
