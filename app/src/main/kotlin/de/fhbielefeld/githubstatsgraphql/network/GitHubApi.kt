@@ -42,7 +42,9 @@ class GitHubApi(private val context: Context) {
 
     fun organizationSearch(query: String, cursor: String?,
                            callback: (GitHubResult<OrganizationSearchData>) -> Unit): Call {
-        return gitHubHttpClient.request(buildQuery(R.raw.query_search_organization, query, cursor),
+        val finalCursor = if (cursor.isNullOrBlank()) "" else "after:\\\"$cursor\\\""
+
+        return gitHubHttpClient.request(buildQuery(R.raw.query_search_organization, query, finalCursor),
                 parseCallback = {
                     deliverOnMainThread(parser.adapter(OrganizationSearchResult::class.java)
                             .fromJson(it).init(), callback)

@@ -1,5 +1,5 @@
 {
-  search(first: 30, query: \"%s\", after: \"%s\", type: USER) {
+  search(first: 30 query: \"%s\" %s type: USER) {
     pageInfo {
       endCursor
       hasNextPage
